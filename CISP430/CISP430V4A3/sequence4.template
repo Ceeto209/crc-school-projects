@@ -1,0 +1,192 @@
+// Name: Israel Vasquez
+// Assignment#: A3
+// File Name: sequence4.template
+// Purpose: This file contains the implementation of the sequence class template.
+// Course: CISP 430 SP25
+
+
+#include "sequence4.h"
+#include <cassert>  // Provides assert
+#include <cstdlib>  // Provides NULL, size_t
+
+namespace CISP430_A3 {
+
+    // CONSTRUCTORS and DESTRUCTOR
+    template <class Item>
+    sequence<Item>::sequence() : head_ptr(NULL), tail_ptr(NULL), cursor(NULL), precursor(NULL), many_nodes(0) {
+        // Initialize all pointers to NULL and many_nodes to 0.
+        // This creates an empty sequence.
+    }
+
+    template <class Item>
+    sequence<Item>::sequence(const sequence<Item>& source) {
+        list_copy(source.head_ptr, head_ptr, tail_ptr);
+        many_nodes = source.many_nodes;
+
+        // Update cursor and precursor
+        if (source.cursor == NULL) {
+            // If the source has no cursor, set cursor and precursor to NULL
+            cursor = NULL;
+            precursor = NULL;
+        } else {
+            // Locate the cursor and precursor in the new list
+            node<Item>* source_ptr = source.head_ptr;
+            node<Item>* new_ptr = head_ptr;
+            while (source_ptr != NULL && source_ptr != source.cursor) {
+                source_ptr = source_ptr->link();
+                new_ptr = new_ptr->link();
+            }
+            cursor = new_ptr; // Set cursor to the corresponding node in the new list
+
+            // Locate the precursor
+            if (source.precursor == NULL) {
+                precursor = NULL;
+            } else {
+                source_ptr = source.head_ptr;
+                new_ptr = head_ptr;
+                while (source_ptr != NULL && source_ptr != source.precursor) {
+                    source_ptr = source_ptr->link();
+                    new_ptr = new_ptr->link();
+                }
+                precursor = new_ptr; // Set precursor to the corresponding node in the new list
+            }
+        }
+    }
+
+    // Destructor
+    template <class Item>
+    sequence<Item>::~sequence() {
+        list_clear(head_ptr);
+    }
+
+    // MODIFICATION MEMBER FUNCTIONS
+
+    // start(): Move the cursor to the start of the sequence
+    template <class Item>
+    void sequence<Item>::start() {
+        cursor = head_ptr;
+        precursor = NULL;
+    }
+
+    // advance(): Move the cursor to the next item in the sequence
+    template <class Item>
+    void sequence<Item>::advance() {
+        assert(is_item());  // Ensure cursor is not nullptr
+        precursor = cursor;
+        cursor = cursor->link();
+    }
+
+    // insert(): Insert a new item before the current item
+    template <class Item>
+    void sequence<Item>::insert(const Item& entry) {
+        if (cursor == head_ptr || !is_item()) {
+            // Insert at the front of the sequence
+            list_head_insert(head_ptr, entry);
+            cursor = head_ptr;
+            precursor = NULL;
+        } else {
+            // Insert after the precursor
+            list_insert(precursor, entry);
+            cursor = precursor->link();
+        }
+        many_nodes++;
+    }
+
+    // attach(): Insert a new item after the current item
+    template <class Item>
+    void sequence<Item>::attach(const Item& entry) {
+        if (cursor == NULL || !is_item()) {
+            // Attach at the end of the sequence
+            if (head_ptr == NULL) {
+                // Sequence is empty
+                list_head_insert(head_ptr, entry);
+                cursor = head_ptr;
+                precursor = NULL;
+                tail_ptr = head_ptr;  // Update tail_ptr to point to the new node
+            } else {
+                // Attach after the tail
+                list_insert(tail_ptr, entry);
+                precursor = tail_ptr;
+                cursor = tail_ptr->link();
+                tail_ptr = cursor;  // Update tail_ptr to point to the new node
+            }
+        } else {
+            // Attach after the cursor
+            list_insert(cursor, entry);
+            precursor = cursor;
+            cursor = cursor->link();
+            if (cursor->link() == NULL) {
+                tail_ptr = cursor;  // Update tail_ptr if the new node is at the end
+            }
+        }
+
+        many_nodes++;
+        
+    }
+
+    // remove_current(): Remove the current item from the sequence
+    template <class Item>
+    void sequence<Item>::remove_current() {
+        assert(is_item());  // Ensure cursor is not nullptr
+        if (cursor == head_ptr) {
+            // Remove the head node
+            list_head_remove(head_ptr);
+            cursor = head_ptr;
+            precursor = NULL;
+        } else {
+            // Remove a non-head node
+            list_remove(precursor);
+            cursor = precursor->link();
+        }
+        many_nodes--;
+    }
+
+    // Assignment operator
+    template <class Item>
+    void sequence<Item>::operator=(const sequence<Item>& source) {
+        if (this == &source)
+            return;
+
+        list_clear(head_ptr);
+        list_copy(source.head_ptr, head_ptr, tail_ptr);
+        many_nodes = source.many_nodes;
+
+        // Update cursor and precursor
+        if (source.cursor == NULL) {
+            cursor = NULL;
+            precursor = NULL;
+        } else {
+            // Locate the cursor and precursor in the new list
+            node<Item>* source_ptr = source.head_ptr;
+            node<Item>* new_ptr = head_ptr;
+            while (source_ptr != NULL && source_ptr != source.cursor) {
+                source_ptr = source_ptr->link();
+                new_ptr = new_ptr->link();
+            }
+            cursor = new_ptr;
+
+            // Locate the precursor
+            if (source.precursor == NULL) {
+                precursor = NULL;
+            } else {
+                source_ptr = source.head_ptr;
+                new_ptr = head_ptr;
+                while (source_ptr != NULL && source_ptr != source.precursor) {
+                    source_ptr = source_ptr->link();
+                    new_ptr = new_ptr->link();
+                }
+                precursor = new_ptr;
+            }
+        }
+    }
+
+    // CONSTANT MEMBER FUNCTIONS
+
+    // current(): Return the current item in the sequence
+    template <class Item>
+    typename sequence<Item>::value_type sequence<Item>::current() const {
+        assert(is_item());  // Ensure cursor is not nullptr
+        return cursor->data();
+    }
+
+}  // namespace CISP430_A3

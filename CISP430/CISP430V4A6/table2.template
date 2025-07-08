@@ -1,0 +1,218 @@
+// Name: Israel Vasquez
+// Assignment#: A6
+// File Name: table2.template
+// Purpose: Implementation file for the Table template class. Contains the
+//          implementation of all member functions for the chained hash table
+//          including hash function, insert/remove operations, and printing.
+// Course: CISP 430 SP25
+
+#include <iostream>
+#include <cstdlib>
+
+using namespace std;
+
+/*===========================================================================
+ * CONSTRUCTORS, DESTRUCTOR, AND OPERATORS
+ *=========================================================================*/
+
+/**
+ * @brief Default constructor - Initializes empty hash table
+ * @post All buckets set to NULL and record count to zero
+ */
+template <class RecordType>
+Table<RecordType>::Table() {
+    for (size_t i = 0; i < TABLE_SIZE; i++)
+        data[i] = NULL;
+    total_records = 0;
+}
+
+/**
+ * @brief Destructor - Cleans up all allocated memory
+ * @post All nodes deallocated and pointers set to NULL
+ */
+template <class RecordType>
+Table<RecordType>::~Table() {
+    clear();
+}
+
+/**
+ * @brief Copy constructor - Creates deep copy of source table
+ * @param source The table to copy from
+ * @post New table created with identical contents to source
+ */
+template <class RecordType>
+Table<RecordType>::Table(const Table& source) {
+    for (size_t i = 0; i < TABLE_SIZE; i++)
+        data[i] = NULL;
+    copy(source);
+}
+
+/**
+ * @brief Assignment operator - Makes deep copy of source table
+ * @param source The table to assign from
+ * @return Reference to the modified table
+ * @post Current contents cleared and replaced with copy of source
+ */
+template <class RecordType>
+void Table<RecordType>::operator=(const Table& source) {
+    if (this == &source)
+        return;
+    clear();
+    copy(source);
+}
+
+/*===========================================================================
+ * PUBLIC MODIFICATION MEMBER FUNCTIONS
+ *=========================================================================*/
+
+/**
+ * @brief Inserts a record into the hash table
+ * @param entry The record to insert (must have key >= 0)
+ * @post If key exists, record is updated. Otherwise added to appropriate chain.
+ */
+template <class RecordType>
+void Table<RecordType>::insert(const RecordType& entry) {
+    size_t index = hash_func(entry.key);
+    Node<RecordType>* existing = list_search(data[index], entry);
+    
+    if (existing != NULL) {
+        existing->data = entry;  // Update existing record
+    } else {
+        list_head_insert(data[index], entry);  // Add new record
+        total_records++;
+    }
+}
+
+/**
+ * @brief Removes a record with specified key
+ * @param key The key of record to remove
+ * @post If found, record is removed from its chain. Table unchanged if not found.
+ */
+template <class RecordType>
+void Table<RecordType>::remove(int key) {
+    size_t index = hash_func(key);
+    Node<RecordType>* cursor = data[index];
+    Node<RecordType>* precursor = NULL;
+    
+    // Search for node with matching key
+    while (cursor != NULL && cursor->data.key != key) {
+        precursor = cursor;
+        cursor = cursor->link;
+    }
+    
+    // If found, remove the node
+    if (cursor != NULL) {
+        if (precursor == NULL)
+            list_head_remove(data[index]);  // Remove from head
+        else
+            list_remove(precursor);         // Remove from middle
+        total_records--;
+    }
+}
+
+/**
+ * @brief Prints contents of a single bucket
+ * @param index The bucket index to print (0 to TABLE_SIZE-1)
+ * @post Bucket contents printed in format: [(index)]----> [key]--> ... --> NULL
+ */
+template <class RecordType>
+void Table<RecordType>::print(int index) const {
+    if (index < 0 || index >= TABLE_SIZE) {
+        cout << "Invalid index!" << endl;
+        return;
+    }
+    
+    cout << "[( " << index << " )]----> ";
+    Node<RecordType>* cursor = data[index];
+    
+    if (cursor == NULL) {
+        cout << " NULL";
+    } else {
+        while (cursor != NULL) {
+            cout << "[" << cursor->data.key << "]";
+            if (cursor->link != NULL)
+                cout << "-->";
+            cursor = cursor->link;
+        }
+        cout << "--> NULL";
+    }
+    cout << endl;
+}
+
+/*===========================================================================
+ * PUBLIC CONSTANT MEMBER FUNCTIONS
+ *=========================================================================*/
+
+/**
+ * @brief Checks if a record with target key exists
+ * @param target The record to search for
+ * @return True if record found, false otherwise
+ */
+template <class RecordType>
+bool Table<RecordType>::is_present(const RecordType& target) const {
+    size_t index = hash_func(target.key);
+    return (list_search(data[index], target) != NULL);
+}
+
+/**
+ * @brief Finds a record with specified key
+ * @param key The key to search for
+ * @param found Output parameter set to true if record found
+ * @param result Output parameter containing copy of found record
+ * @post If found, 'found' is true and 'result' contains record. Otherwise false.
+ */
+template <class RecordType>
+void Table<RecordType>::find(int key, bool& found, RecordType& result) const {
+    size_t index = hash_func(key);
+    Node<RecordType>* cursor = data[index];
+    
+    found = false;
+    while (cursor != NULL && !found) {
+        if (cursor->data.key == key) {
+            found = true;
+            result = cursor->data;
+        }
+        cursor = cursor->link;
+    }
+}
+
+/*===========================================================================
+ * PRIVATE HELPER FUNCTIONS
+ *=========================================================================*/
+
+/**
+ * @brief Hash function using simple modulo operation
+ * @param key The key to hash
+ * @return Computed hash index (0 to TABLE_SIZE-1)
+ */
+template <class RecordType>
+size_t Table<RecordType>::hash_func(int key) const {
+    return key % TABLE_SIZE;
+}
+
+/**
+ * @brief Clears all contents of the table
+ * @post All nodes deallocated, buckets set to NULL, count reset to zero
+ */
+template <class RecordType>
+void Table<RecordType>::clear() {
+    for (size_t i = 0; i < TABLE_SIZE; i++) {
+        list_clear(data[i]);
+        data[i] = NULL;
+    }
+    total_records = 0;
+}
+
+/**
+ * @brief Creates deep copy of source table
+ * @param source The table to copy from
+ * @post Current table contents match source table
+ */
+template <class RecordType>
+void Table<RecordType>::copy(const Table& source) {
+    Node<RecordType>* tail_ptr;
+    for (size_t i = 0; i < TABLE_SIZE; i++) {
+        list_copy(source.data[i], data[i], tail_ptr);
+    }
+    total_records = source.total_records;
+}
