@@ -1,0 +1,2 @@
+# CISP 405 Object Oriented Programming using C# on Visual Studio .NET
+This course is an introduction to C# object-oriented programming language in a Visual Studio environment. Topics will include Visual Studio IDE, Constructors, Methods, Arrays, Inheritance, Polymorphism, Exception Handling, GUI, and Multithreading. This course is designed for students to understand the web-based as well as system development capabilities of C#.
