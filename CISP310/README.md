@@ -1,3 +1,2 @@
 # Computer Architecture and Organization
-This is an introductory course in assembly language for the Intel family of microprocessors.
-This course was formerly known as CISP 310: Assembly Language Programming for Microcomputers.
+This is an introductory course in assembly language for the Intel family of microprocessors. Students will write and debug programs that use control structures, subprocedures, bit operations, arrays, and interrupts. Upon completion of the course, students will have an increased understanding of the internal operations of computers. This course was formerly known as CISP 310: Assembly Language Programming for Microcomputers.
